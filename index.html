@@ -41,12 +41,9 @@
             <h1 class="text-2xl font-bold text-gray-800">English Level Up, Boost Your Confidence</h1>
             <p class="text-gray-600">ระบบบันทึกการเข้าร่วมกิจกรรม</p>
 
-            <!-- แบนเนอร์เตือน in-app browser -->
-            <div id="iabBanner" class="hidden mt-3 w-full text-left bg-yellow-50 text-yellow-800 border border-yellow-200 rounded-lg p-3 text-sm">
-              ตรวจพบว่าเปิดผ่านแอป (เช่น LINE/Facebook) อาจบล็อกกล้อง/โลเคชัน
-              <b>แนะนำให้เปิดด้วย Safari/Chrome</b><br/>
-              <button id="copyLinkBtn" class="mt-2 theme-btn px-3 py-1 rounded">คัดลอกลิงก์</button>
-              <a id="openExternalBtn" class="mt-2 inline-block theme-btn-secondary px-3 py-1 rounded" href="#" rel="noopener">เปิดด้วยเบราว์เซอร์</a>
+            <!-- แบนเนอร์เตือน in-app browser: เหลือปุ่มคัดลอกลิงก์ และจัดกึ่งกลาง -->
+            <div id="iabBanner" class="hidden mt-3 w-full text-center bg-yellow-50 text-yellow-800 border border-yellow-200 rounded-lg p-3 text-sm">
+              <button id="copyLinkBtn" class="theme-btn px-3 py-1 rounded inline-flex items-center justify-center">คัดลอกลิงก์</button>
             </div>
         </div>
 
@@ -80,17 +77,28 @@
 
             <div>
                 <label class="block text-sm font-medium text-gray-700">ถ่ายภาพเซลฟี่ให้ติดภาพป้ายบนเวทีและหน้าตัวเอง</label>
+
+                <!-- วิดีโอสตรีม -->
                 <div id="camera-container" class="mt-2 hidden">
                     <video id="video" playsinline autoplay></video>
                 </div>
+
+                <!-- ปุ่มถ่ายภาพ: อยู่ระหว่างวิดีโอกับภาพถ่าย และจัดกึ่งกลาง -->
+                <div id="takePhotoWrap" class="mt-3 hidden w-full text-center">
+                    <button type="button" id="takePhotoBtn" class="theme-btn font-bold py-2 px-6 rounded-lg inline-flex items-center justify-center">ถ่ายภาพ</button>
+                </div>
+
+                <!-- ภาพถ่ายแล้ว / ตัวอย่าง -->
                 <div id="preview-container" class="mt-2">
                     <img id="preview" src="https://placehold.co/400x300/FFF8E1/9E9E9E?text=รอเปิดกล้อง" alt="ตัวอย่างภาพ">
                 </div>
+
                 <canvas id="canvas" class="hidden"></canvas>
-                <div id="camera-controls" class="mt-3 grid grid-cols-2 gap-2">
+
+                <!-- ปุ่มอื่น ๆ -->
+                <div id="camera-controls" class="mt-3 flex flex-col gap-2">
                     <button type="button" id="openCameraBtn" class="w-full theme-btn font-bold py-2 px-4 rounded-lg">เปิดกล้อง</button>
-                    <button type="button" id="takePhotoBtn" class="w-full theme-btn font-bold py-2 px-4 rounded-lg hidden">ถ่ายภาพ</button>
-                    <button type="button" id="retakeBtn" class="w-full theme-btn-secondary font-bold py-2 px-4 rounded-lg hidden col-span-2">ถ่ายใหม่</button>
+                    <button type="button" id="retakeBtn" class="w-full theme-btn-secondary font-bold py-2 px-4 rounded-lg hidden">ถ่ายใหม่</button>
                 </div>
             </div>
             
@@ -121,6 +129,7 @@
         const fullNameInput = document.getElementById('fullName');
         const cameraContainer = document.getElementById('camera-container');
         const previewContainer = document.getElementById('preview-container');
+        const takePhotoWrap = document.getElementById('takePhotoWrap');
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const previewImg = document.getElementById('preview');
@@ -129,10 +138,9 @@
         const retakeBtn = document.getElementById('retakeBtn');
         const checkLocationBtn = document.getElementById('checkLocationBtn');
 
-        // in-app browser banner
+        // in-app browser banner (เหลือแค่ปุ่มคัดลอกลิงก์)
         const iabBanner = document.getElementById('iabBanner');
         const copyLinkBtn = document.getElementById('copyLinkBtn');
-        const openExternalBtn = document.getElementById('openExternalBtn');
 
         let userLocation = null, isUserInArea = false, base64Image = null, stream = null;
 
@@ -152,11 +160,13 @@
           if (isInApp) {
             iabBanner.classList.remove('hidden');
             copyLinkBtn.onclick = async () => {
-              try { await navigator.clipboard.writeText(location.href);
+              try {
+                await navigator.clipboard.writeText(location.href);
                 Swal.fire({icon:'success', title:'คัดลอกลิงก์แล้ว', timer:1200, showConfirmButton:false});
-              } catch { Swal.fire({icon:'info', title:'คัดลอกลิงก์ไม่สำเร็จ', text:'โปรดคัดลอกจากแถบที่อยู่เอง'}); }
+              } catch {
+                Swal.fire({icon:'info', title:'คัดลอกลิงก์ไม่สำเร็จ', text:'โปรดคัดลอกจากแถบที่อยู่เอง'});
+              }
             };
-            openExternalBtn.href = location.href;
           }
         })();
 
@@ -212,24 +222,36 @@
 
             video.srcObject = stream;
             cameraContainer.classList.remove('hidden'); 
+            takePhotoWrap.classList.remove('hidden'); // แสดงปุ่มถ่ายภาพตรงกลาง
             previewContainer.classList.add('hidden'); 
             openCameraBtn.classList.add('hidden'); 
-            takePhotoBtn.classList.remove('hidden'); 
             retakeBtn.classList.add('hidden');
         }
         function stopCamera() { if (stream) { stream.getTracks().forEach(track => track.stop()); stream = null; } }
+
         openCameraBtn.addEventListener('click', startCamera);
-        retakeBtn.addEventListener('click', startCamera);
+
+        // กดถ่ายภาพ
         takePhotoBtn.addEventListener('click', () => {
-            const context = canvas.getContext('2d'); canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d'); 
+            canvas.width = video.videoWidth; 
+            canvas.height = video.videoHeight;
             context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
             base64Image = canvas.toDataURL('image/jpeg');
             previewImg.src = base64Image;
             stopCamera();
             cameraContainer.classList.add('hidden'); 
+            takePhotoWrap.classList.add('hidden'); // ซ่อนปุ่มถ่ายหลังถ่ายแล้ว
             previewContainer.classList.remove('hidden'); 
-            takePhotoBtn.classList.add('hidden'); 
             retakeBtn.classList.remove('hidden');
+            refreshSubmitEnabled();
+        });
+
+        // ถ่ายใหม่
+        retakeBtn.addEventListener('click', () => {
+            base64Image = null;
+            previewImg.src = 'https://placehold.co/400x300/FFF8E1/9E9E9E?text=รอเปิดกล้อง';
+            startCamera();
             refreshSubmitEnabled();
         });
 
@@ -264,9 +286,6 @@
 
             fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', cache: 'no-cache', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) })
             .then(() => {
-                         const now = new Date();
-                const timeString = now.toTimeString().split(' ')[0];
-                
                 Swal.fire({
                   icon: 'success',
                   title: 'บันทึกการเข้าร่วมกิจกรรมสำเร็จ',
@@ -276,26 +295,30 @@
                       <b>เวลา:</b> ${new Date().toTimeString().split(' ')[0]}
                     </div>
                     <a id="goSurveyBtn" class="swal2-confirm swal2-styled" style="display:inline-block;margin-top:12px;">
-                  ทำแบบประเมินเพื่อรับคะแนนความดี
-                </a>
-  `,
-  showConfirmButton: false,
-  allowOutsideClick: false,
-  allowEscapeKey: false,
-  didOpen: () => {
-    document.getElementById('goSurveyBtn').addEventListener('click', () => {
-      // ถ้าต้องการบังคับแท็บเดียว ใช้ replace(); ถ้าอยากเปิดแท็บใหม่ ใช้ open()
-      window.location.replace('https://forms.gle/MWS1uYfAiUaubXzx9');
-    });
-  }
-});
+                      ทำแบบประเมินเพื่อรับคะแนนความดี
+                    </a>
+                  `,
+                  showConfirmButton: false,
+                  allowOutsideClick: false,
+                  allowEscapeKey: false,
+                  didOpen: () => {
+                    document.getElementById('goSurveyBtn').addEventListener('click', () => {
+                      window.location.replace('https://forms.gle/MWS1uYfAiUaubXzx9');
+                    });
+                  }
+                });
 
-                
                 form.reset();
                 base64Image = null;
                 previewImg.src = 'https://placehold.co/400x300/FFF8E1/9E9E9E?text=รอเปิดกล้อง';
-                retakeBtn.classList.add('hidden'); openCameraBtn.classList.remove('hidden'); takePhotoBtn.classList.add('hidden');
-                userLocation = null; isUserInArea = false;
+                // รีเซ็ตปุ่ม/สถานะ
+                retakeBtn.classList.add('hidden'); 
+                openCameraBtn.classList.remove('hidden'); 
+                // ซ่อนปุ่มถ่ายภาพ (รอเปิดกล้องใหม่)
+                takePhotoWrap.classList.add('hidden');
+                // กลับไปเริ่มต้น
+                userLocation = null; 
+                isUserInArea = false;
                 mapStatusDiv.textContent = 'ยังไม่ได้ตรวจสอบพิกัด';
                 mapStatusDiv.className = 'status-checking';
                 refreshSubmitEnabled();
