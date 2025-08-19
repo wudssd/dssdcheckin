@@ -109,8 +109,8 @@
     <script>
         // CONFIGURATION
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyRwj2zuncF6Jp3y3Enmsgh4rBIFpBeasoXhQGaJTqTYaVCJ9GbxtDQ5cJ9_muBx97c/exec";
-        const TARGET_LAT = 8.64547; 
-        const TARGET_LON = 99.89736; 
+        const TARGET_LAT = 8.65161; 
+        const TARGET_LON = 99.89178; 
         const ALLOWED_RADIUS_KM = 0.2; 
 
         // DOM ELEMENTS & STATE
@@ -268,22 +268,28 @@
                 const timeString = now.toTimeString().split(' ')[0];
                 
                 Swal.fire({
-                    icon: 'success',
-                    title: 'บันทึกการเข้าร่วมกิจกรรมสำเร็จ',
-                    html: `
-                        <div style="text-align: left; margin: 1em 0; line-height: 1.6;">
-                            <b>ชื่อ-สกุล:</b> ${fullNameInput.value}<br>
-                            <b>เวลา:</b> ${timeString}
-                        </div>
-                        <div style="font-weight: bold; color: #d33; margin-top: 1em; margin-bottom: 1em;">กรุณาบันทึกหน้าจอนี้ไว้ด้วย!</div>
-                        <hr>
-                        <div style="margin-top: 1em;">
-                            ให้ผู้เข้าร่วมกิจกรรมทุกคนประเมินความพึงพอใจกิจกรรม เพื่อรับคะแนนความดี<br>
-                            <a href="https://forms.gle/MWS1uYfAiUaubXzx9" target="_blank">คลิก!ทำแบบประเมิน</a>
-                        </div>
-                    `,
-                    confirmButtonText: 'ตกลง'
-                });
+                  icon: 'success',
+                  title: 'บันทึกการเข้าร่วมกิจกรรมสำเร็จ',
+                  html: `
+                    <div style="text-align:left;line-height:1.6;margin:1em 0;">
+                      <b>ชื่อ-สกุล:</b> ${fullNameInput.value}<br>
+                      <b>เวลา:</b> ${new Date().toTimeString().split(' ')[0]}
+                    </div>
+                    <a id="goSurveyBtn" class="swal2-confirm swal2-styled" style="display:inline-block;margin-top:12px;">
+                  ทำแบบประเมินเพื่อรับคะแนนความดี
+                </a>
+  `,
+  showConfirmButton: false,
+  allowOutsideClick: false,
+  allowEscapeKey: false,
+  didOpen: () => {
+    document.getElementById('goSurveyBtn').addEventListener('click', () => {
+      // ถ้าต้องการบังคับแท็บเดียว ใช้ replace(); ถ้าอยากเปิดแท็บใหม่ ใช้ open()
+      window.location.replace('https://forms.gle/MWS1uYfAiUaubXzx9');
+    });
+  }
+});
+
                 
                 form.reset();
                 base64Image = null;
