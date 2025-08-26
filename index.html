@@ -50,6 +50,13 @@
 </div>
 
         <form id="funrunForm" class="p-6 space-y-5">
+
+<!-- สถานะช่วงเวลาเปิด-ปิดการบันทึก -->
+<div>
+    <label class="block text-sm font-medium text-gray-700 mb-1">สถานะช่วงเวลา</label>
+    <div id="timeStatus" class="status-checking">กำลังตรวจสอบเวลา...</div>
+</div>
+
             
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">เปิด Location และกดตรวจสอบพิกัด</label>
@@ -124,6 +131,37 @@
         const TARGET_LON = 99.89736; 
         const ALLOWED_RADIUS_KM = 0.2; 
 
+// --- TIME WINDOW (เวลาประเทศไทย, ปรับตามต้องการ) ---
+const TZ_OFFSET = '+07:00'; // Bangkok
+const OPEN_AT   = '2025-08-27T08:00:00' + TZ_OFFSET; // เวลาเปิด
+const CLOSE_AT  = '2025-08-27T18:00:00' + TZ_OFFSET; // เวลาปิด
+let isOpenWindow = false;
+
+function checkTimeWindow() {
+  const nowMs   = Date.now();
+  const openMs  = new Date(OPEN_AT).getTime();
+  const closeMs = new Date(CLOSE_AT).getTime();
+  isOpenWindow = nowMs >= openMs && nowMs <= closeMs;
+
+  const timeStatus = document.getElementById('timeStatus');
+  if (timeStatus) {
+    timeStatus.textContent = isOpenWindow ? 'เปิดให้บันทึกแล้ว' : (nowMs < openMs ? 'ยังไม่เปิดให้บันทึก' : 'ปิดการบันทึกแล้ว');
+    timeStatus.className = isOpenWindow ? 'status-in-area' : 'status-out-area';
+  }
+  // รีเฟรชปุ่มส่ง หากฟังก์ชันมีอยู่
+  if (typeof refreshSubmitEnabled === 'function') refreshSubmitEnabled();
+}
+// ตรวจครั้งแรกและทุก 30 วินาที
+document.addEventListener('DOMContentLoaded', checkTimeWindow);
+setInterval(checkTimeWindow, 30000);
+
+// helper สำหรับแสดงช่วงเวลาในข้อความ
+function formatTH(dtStr) {
+  try {
+    return new Date(dtStr).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok', hour12: false });
+  } catch (e) { return dtStr; }
+}
+
         // DOM ELEMENTS & STATE
         const form = document.getElementById('funrunForm');
         const submitBtn = document.getElementById('submitBtn');
@@ -148,10 +186,14 @@
         let userLocation = null, isUserInArea = false, base64Image = null, stream = null;
 
         // เปิดส่งได้เฉพาะ “อยู่ในพื้นที่ && มีรูป”
-        function refreshSubmitEnabled() {
-          const hasPhoto = !!base64Image;
-          submitBtn.disabled = !(isUserInArea && hasPhoto);
-          if (!isUserInArea) submitBtn.textContent = 'ไม่สามารถส่งข้อมูลได้ (ยังไม่ยืนยันพิกัด)';
+        \1
+  // ปิดปุ่มหากยังไม่ถึงเวลาเปิดบันทึก
+  submitBtn.disabled = !(isUserInArea && hasPhoto && isOpenWindow);
+  if (!isOpenWindow)        submitBtn.textContent = 'ยังไม่ถึงเวลาเปิดบันทึก';
+  else if (!isUserInArea)   submitBtn.textContent = 'ไม่สามารถส่งข้อมูลได้ (ยังไม่ยืนยันพิกัด)';
+  else if (!hasPhoto)       submitBtn.textContent = 'ไม่สามารถส่งข้อมูลได้ (ยังไม่มีรูป)';
+  else                      submitBtn.textContent = 'ส่งข้อมูล';
+if (!isUserInArea) submitBtn.textContent = 'ไม่สามารถส่งข้อมูลได้ (ยังไม่ยืนยันพิกัด)';
           else if (!hasPhoto) submitBtn.textContent = 'ไม่สามารถส่งข้อมูลได้ (ยังไม่มีรูป)';
           else submitBtn.textContent = 'ส่งข้อมูล';
         }
@@ -264,10 +306,13 @@
         }
 
         // FORM SUBMISSION
-        form.addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            if (!isUserInArea) { Swal.fire('อยู่นอกพื้นที่!', 'คุณต้องอยู่ในพื้นที่ที่กำหนดเพื่อส่งข้อมูล', 'warning'); return; }
+        \1
+            // กันส่งหากอยู่นอกช่วงเวลา
+            if (!isOpenWindow) { 
+                Swal.fire('ยังไม่เปิดให้บันทึก', `ระบบเปิดระหว่าง ${formatTH(OPEN_AT)} - ${formatTH(CLOSE_AT)}`, 'info'); 
+                return; 
+            }
+if (!isUserInArea) { Swal.fire('อยู่นอกพื้นที่!', 'คุณต้องอยู่ในพื้นที่ที่กำหนดเพื่อส่งข้อมูล', 'warning'); return; }
             if (studentIdInput.value.length !== 8) { Swal.fire('รหัสไม่ถูกต้อง!', 'รหัสนักศึกษาต้องมี 8 หลักเท่านั้น', 'error'); return; }
             if (!base64Image) { Swal.fire('ไม่มีรูปภาพ!', 'กรุณาถ่ายภาพเพื่อยืนยันการเข้าร่วม', 'warning'); return; }
             if (!form.checkValidity()) { Swal.fire('ข้อมูลไม่ครบ!', 'กรุณากรอกข้อมูลที่จำเป็นให้ครบทุกช่อง', 'error'); return; }
